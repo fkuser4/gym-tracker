@@ -54,6 +54,7 @@ model User {
   workouts             Workout[]
   workoutPlans         WorkoutPlan[]
   exercises            Exercise[]
+  customFoods          Food[]
   meals                Meal[]
   nutritionLogs        NutritionLog[]
   bodyMeasurements     BodyMeasurement[]
