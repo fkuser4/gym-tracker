@@ -1,0 +1,1017 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// USER MANAGEMENT
+// ========================================
+
+enum UserRole {
+  USER      // Normal user
+  TRAINER   // Personal trainer
+  GYM_ADMIN // Gym administrator
+  SUPER_ADMIN
+}
+
+enum GenderType {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  firstName     String
+  lastName      String
+  username      String?   @unique
+  role          UserRole  @default(USER)
+  avatar        String?
+  phone         String?
+  dateOfBirth   DateTime?
+  gender        GenderType?
+  bio           String?
+  height        Float?    // in cm
+  isActive      Boolean   @default(true)
+  emailVerified Boolean   @default(false)
+
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+
+  // Relations
+  profile              UserProfile?
+  workouts             Workout[]
+  workoutPlans         WorkoutPlan[]
+  exercises            Exercise[]
+  meals                Meal[]
+  nutritionLogs        NutritionLog[]
+  bodyMeasurements     BodyMeasurement[]
+  progressPhotos       ProgressPhoto[]
+  personalRecords      PersonalRecord[]
+  achievements         UserAchievement[]
+  posts                Post[]
+  postLikes            PostLike[]
+  comments             Comment[]
+
+  // Trainer relationships
+  trainerProfile       TrainerProfile?
+  trainersFollowing    TrainerClient[]       @relation("ClientToTrainer")
+  clients              TrainerClient[]       @relation("TrainerToClient")
+  programsCreated      WorkoutPlan[]         @relation("TrainerPrograms")
+  clientWorkouts       Workout[]             @relation("TrainerClientWorkouts")
+
+  // Gym relationships
+  gymMemberships       GymMembership[]
+  gymCheckins          GymCheckin[]
+  bookings             Booking[]
+
+  // Communication
+  sentMessages         Message[]             @relation("MessageSender")
+  receivedMessages     Message[]             @relation("MessageReceiver")
+  notifications        Notification[]
+
+  // Payments
+  payments             Payment[]
+  subscriptions        Subscription[]
+
+  @@index([email])
+  @@index([username])
+  @@index([role])
+}
+
+model UserProfile {
+  id                    String   @id @default(uuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Preferences
+  theme                 String   @default("light") // light, dark, auto
+  language              String   @default("en")
+  timezone              String   @default("UTC")
+  measurementSystem     String   @default("metric") // metric, imperial
+
+  // Fitness goals
+  fitnessGoal           String?  // weight_loss, muscle_gain, maintenance, etc.
+  targetWeight          Float?
+  weeklyWorkoutGoal     Int?
+  dailyCalorieGoal      Int?
+  dailyProteinGoal      Int?
+  dailyCarbohydrateGoal Int?
+  dailyFatGoal          Int?
+  dailyWaterGoal        Int?     // in ml
+
+  // Notifications settings
+  emailNotifications    Boolean  @default(true)
+  pushNotifications     Boolean  @default(true)
+  smsNotifications      Boolean  @default(false)
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// ========================================
+// TRAINER-SPECIFIC MODELS (CRM)
+// ========================================
+
+model TrainerProfile {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  bio               String?
+  specializations   String[] // e.g., ["strength", "cardio", "yoga"]
+  certifications    String[]
+  yearsOfExperience Int?
+  hourlyRate        Float?
+
+  // Business settings
+  acceptingClients  Boolean  @default(true)
+  maxClients        Int?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model TrainerClient {
+  id            String   @id @default(uuid())
+  trainerId     String
+  trainer       User     @relation("TrainerToClient", fields: [trainerId], references: [id], onDelete: Cascade)
+  clientId      String
+  client        User     @relation("ClientToTrainer", fields: [clientId], references: [id], onDelete: Cascade)
+
+  startDate     DateTime @default(now())
+  endDate       DateTime?
+  isActive      Boolean  @default(true)
+
+  // Client segmentation
+  tags          String[] // For grouping clients
+  notes         String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([trainerId, clientId])
+  @@index([trainerId])
+  @@index([clientId])
+}
+
+// ========================================
+// EXERCISES & WORKOUTS
+// ========================================
+
+enum ExerciseCategory {
+  STRENGTH
+  CARDIO
+  FLEXIBILITY
+  BALANCE
+  PLYOMETRICS
+  OLYMPIC_LIFTING
+  CALISTHENICS
+  SPORT_SPECIFIC
+  OTHER
+}
+
+enum MuscleGroup {
+  CHEST
+  BACK
+  SHOULDERS
+  BICEPS
+  TRICEPS
+  FOREARMS
+  ABS
+  OBLIQUES
+  QUADS
+  HAMSTRINGS
+  GLUTES
+  CALVES
+  FULL_BODY
+  OTHER
+}
+
+model Exercise {
+  id              String             @id @default(uuid())
+  name            String
+  description     String?
+  category        ExerciseCategory
+  muscleGroups    MuscleGroup[]
+  equipment       String[]           // e.g., ["barbell", "dumbbells"]
+
+  // Media
+  imageUrl        String?
+  videoUrl        String?
+  thumbnailUrl    String?
+
+  // Ownership
+  isPublic        Boolean            @default(true)
+  createdBy       String?
+  creator         User?              @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+
+  // Instructions
+  instructions    String?
+  tips            String?
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  // Relations
+  workoutExercises WorkoutExercise[]
+  planExercises    PlanExercise[]
+  personalRecords  PersonalRecord[]
+
+  @@index([category])
+  @@index([createdBy])
+  @@index([name])
+}
+
+model WorkoutPlan {
+  id              String         @id @default(uuid())
+  name            String
+  description     String?
+  durationWeeks   Int?
+  difficulty      String?        // beginner, intermediate, advanced
+  goal            String?        // strength, hypertrophy, endurance, etc.
+
+  // Ownership
+  isPublic        Boolean        @default(false)
+  createdBy       String
+  creator         User           @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  trainerId       String?
+  trainer         User?          @relation("TrainerPrograms", fields: [trainerId], references: [id], onDelete: SetNull)
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relations
+  exercises       PlanExercise[]
+  workouts        Workout[]
+
+  @@index([createdBy])
+  @@index([trainerId])
+  @@index([isPublic])
+}
+
+model PlanExercise {
+  id              String      @id @default(uuid())
+  planId          String
+  plan            WorkoutPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  exerciseId      String
+  exercise        Exercise    @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  dayNumber       Int         // Which day in the plan
+  orderIndex      Int         // Order within the day
+  sets            Int?
+  reps            Int?
+  duration        Int?        // in seconds
+  restTime        Int?        // in seconds
+  notes           String?
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([planId])
+  @@index([exerciseId])
+}
+
+enum WorkoutStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
+
+model Workout {
+  id              String           @id @default(uuid())
+  name            String?
+  date            DateTime         @default(now())
+  status          WorkoutStatus    @default(PLANNED)
+  duration        Int?             // in seconds
+
+  // User or client
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Optional: Trainer tracking for client
+  trainerId       String?
+  trainer         User?            @relation("TrainerClientWorkouts", fields: [trainerId], references: [id], onDelete: SetNull)
+
+  // Optional: Associated plan
+  planId          String?
+  plan            WorkoutPlan?     @relation(fields: [planId], references: [id], onDelete: SetNull)
+
+  // Metrics
+  totalVolume     Float?           // Total weight lifted (kg)
+  caloriesBurned  Int?
+  notes           String?
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  // Relations
+  exercises       WorkoutExercise[]
+
+  @@index([userId])
+  @@index([trainerId])
+  @@index([date])
+  @@index([status])
+}
+
+model WorkoutExercise {
+  id              String    @id @default(uuid())
+  workoutId       String
+  workout         Workout   @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  exerciseId      String
+  exercise        Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  orderIndex      Int
+
+  // Sets tracking
+  sets            WorkoutSet[]
+
+  notes           String?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([workoutId])
+  @@index([exerciseId])
+}
+
+model WorkoutSet {
+  id                String          @id @default(uuid())
+  workoutExerciseId String
+  workoutExercise   WorkoutExercise @relation(fields: [workoutExerciseId], references: [id], onDelete: Cascade)
+
+  setNumber         Int
+  reps              Int?
+  weight            Float?          // in kg
+  duration          Int?            // in seconds (for timed exercises)
+  distance          Float?          // in meters (for cardio)
+  restTime          Int?            // in seconds
+  completed         Boolean         @default(false)
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([workoutExerciseId])
+}
+
+// ========================================
+// NUTRITION
+// ========================================
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+  PRE_WORKOUT
+  POST_WORKOUT
+  OTHER
+}
+
+model Food {
+  id              String   @id @default(uuid())
+  name            String
+  brand           String?
+  barcode         String?  @unique
+
+  // Nutritional info per 100g or per serving
+  servingSize     Float?
+  servingUnit     String?  // g, ml, cup, etc.
+  calories        Int
+  protein         Float
+  carbohydrates   Float
+  fat             Float
+  fiber           Float?
+  sugar           Float?
+  sodium          Float?   // in mg
+
+  // Ownership
+  isPublic        Boolean  @default(true)
+  createdBy       String?
+  creator         User?    @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  mealFoods       MealFood[]
+
+  @@index([name])
+  @@index([barcode])
+  @@index([createdBy])
+}
+
+model Meal {
+  id              String      @id @default(uuid())
+  name            String?
+  type            MealType
+  date            DateTime    @default(now())
+
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  notes           String?
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  foods           MealFood[]
+
+  @@index([userId])
+  @@index([date])
+}
+
+model MealFood {
+  id              String   @id @default(uuid())
+  mealId          String
+  meal            Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  foodId          String
+  food            Food     @relation(fields: [foodId], references: [id], onDelete: Cascade)
+
+  quantity        Float    // Amount consumed
+  unit            String   // g, ml, serving, etc.
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([mealId])
+  @@index([foodId])
+}
+
+model NutritionLog {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date            DateTime @default(now())
+
+  // Daily totals
+  totalCalories   Int      @default(0)
+  totalProtein    Float    @default(0)
+  totalCarbs      Float    @default(0)
+  totalFat        Float    @default(0)
+  totalFiber      Float?
+
+  // Hydration (ml)
+  waterIntake     Int      @default(0)
+
+  notes           String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+}
+
+// ========================================
+// BODY MEASUREMENTS & PROGRESS
+// ========================================
+
+model BodyMeasurement {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date            DateTime @default(now())
+
+  weight          Float?   // in kg
+  bodyFatPercent  Float?
+
+  // Body measurements in cm
+  chest           Float?
+  waist           Float?
+  hips            Float?
+  thighs          Float?
+  arms            Float?
+  calves          Float?
+  shoulders       Float?
+  neck            Float?
+
+  notes           String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([date])
+}
+
+model ProgressPhoto {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  imageUrl        String
+  date            DateTime @default(now())
+
+  weight          Float?
+  notes           String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([date])
+}
+
+model PersonalRecord {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exerciseId      String
+  exercise        Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  recordType      String   // one_rep_max, max_reps, max_distance, max_time
+  value           Float
+  unit            String   // kg, reps, meters, seconds
+  date            DateTime @default(now())
+
+  notes           String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([exerciseId])
+  @@index([date])
+}
+
+// ========================================
+// SOCIAL FEATURES
+// ========================================
+
+model Post {
+  id              String     @id @default(uuid())
+  userId          String
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  content         String
+  imageUrls       String[]   @default([])
+
+  // Associated workout (optional)
+  workoutId       String?
+
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // Relations
+  likes           PostLike[]
+  comments        Comment[]
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model PostLike {
+  id              String   @id @default(uuid())
+  postId          String
+  post            Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+}
+
+model Comment {
+  id              String   @id @default(uuid())
+  postId          String
+  post            Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  content         String
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([postId])
+  @@index([userId])
+}
+
+// ========================================
+// ACHIEVEMENTS & CHALLENGES
+// ========================================
+
+enum AchievementType {
+  WORKOUT_COUNT
+  WEIGHT_LIFTED
+  DISTANCE_RUN
+  CALORIES_BURNED
+  STREAK
+  PERSONAL_RECORD
+  OTHER
+}
+
+model Achievement {
+  id              String              @id @default(uuid())
+  name            String
+  description     String
+  type            AchievementType
+  iconUrl         String?
+
+  // Criteria
+  targetValue     Float
+  unit            String?
+
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  // Relations
+  userAchievements UserAchievement[]
+}
+
+model UserAchievement {
+  id              String      @id @default(uuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId   String
+  achievement     Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  unlockedAt      DateTime    @default(now())
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@index([achievementId])
+}
+
+model Challenge {
+  id              String   @id @default(uuid())
+  name            String
+  description     String
+  startDate       DateTime
+  endDate         DateTime
+
+  // Criteria
+  type            String   // workout_count, total_volume, etc.
+  targetValue     Float
+  unit            String?
+
+  isActive        Boolean  @default(true)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ========================================
+// GYM MANAGEMENT
+// ========================================
+
+model Gym {
+  id              String          @id @default(uuid())
+  name            String
+  description     String?
+
+  // Address
+  address         String
+  city            String
+  state           String?
+  country         String
+  postalCode      String?
+
+  // Contact
+  phone           String?
+  email           String?
+  website         String?
+
+  // Settings
+  logoUrl         String?
+  timezone        String          @default("UTC")
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  memberships     GymMembership[]
+  checkins        GymCheckin[]
+  classes         GymClass[]
+  announcements   GymAnnouncement[]
+  membershipPlans MembershipPlan[]
+
+  @@index([name])
+}
+
+enum MembershipStatus {
+  ACTIVE
+  EXPIRED
+  SUSPENDED
+  CANCELLED
+}
+
+model MembershipPlan {
+  id              String          @id @default(uuid())
+  gymId           String
+  gym             Gym             @relation(fields: [gymId], references: [id], onDelete: Cascade)
+
+  name            String
+  description     String?
+  price           Float
+  durationDays    Int             // e.g., 30, 90, 365
+  features        String[]        @default([])
+
+  isActive        Boolean         @default(true)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  memberships     GymMembership[]
+
+  @@index([gymId])
+}
+
+model GymMembership {
+  id              String           @id @default(uuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gymId           String
+  gym             Gym              @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  planId          String?
+  plan            MembershipPlan?  @relation(fields: [planId], references: [id], onDelete: SetNull)
+
+  status          MembershipStatus @default(ACTIVE)
+  startDate       DateTime         @default(now())
+  endDate         DateTime?
+
+  // QR Code for check-in
+  qrCode          String           @unique @default(uuid())
+
+  autoRenew       Boolean          @default(false)
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@unique([userId, gymId])
+  @@index([userId])
+  @@index([gymId])
+  @@index([status])
+}
+
+model GymCheckin {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gymId           String
+  gym             Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+
+  checkinTime     DateTime @default(now())
+  checkoutTime    DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([gymId])
+  @@index([checkinTime])
+}
+
+enum ClassType {
+  YOGA
+  PILATES
+  SPIN
+  CROSSFIT
+  BOXING
+  ZUMBA
+  HIIT
+  STRENGTH_TRAINING
+  OTHER
+}
+
+model GymClass {
+  id              String    @id @default(uuid())
+  gymId           String
+  gym             Gym       @relation(fields: [gymId], references: [id], onDelete: Cascade)
+
+  name            String
+  description     String?
+  type            ClassType
+  instructorName  String?
+
+  // Schedule
+  dayOfWeek       Int       // 0-6 (Sunday-Saturday)
+  startTime       String    // HH:MM format
+  duration        Int       // in minutes
+
+  maxCapacity     Int?
+
+  isActive        Boolean   @default(true)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  bookings        Booking[]
+
+  @@index([gymId])
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+model Booking {
+  id              String        @id @default(uuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  classId         String
+  class           GymClass      @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  date            DateTime
+  status          BookingStatus @default(CONFIRMED)
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([userId, classId, date])
+  @@index([userId])
+  @@index([classId])
+  @@index([date])
+}
+
+model GymAnnouncement {
+  id              String   @id @default(uuid())
+  gymId           String
+  gym             Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+
+  title           String
+  content         String
+
+  // Optional poll
+  isPoll          Boolean  @default(false)
+  pollOptions     String[] @default([])
+
+  publishedAt     DateTime @default(now())
+  expiresAt       DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([gymId])
+  @@index([publishedAt])
+}
+
+// ========================================
+// COMMUNICATION
+// ========================================
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  SYSTEM
+}
+
+model Message {
+  id              String      @id @default(uuid())
+  senderId        String
+  sender          User        @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId      String
+  receiver        User        @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  type            MessageType @default(TEXT)
+  content         String
+  attachmentUrl   String?
+
+  isRead          Boolean     @default(false)
+  readAt          DateTime?
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([createdAt])
+}
+
+enum NotificationType {
+  WORKOUT_REMINDER
+  ACHIEVEMENT_UNLOCKED
+  PERSONAL_RECORD
+  SOCIAL_LIKE
+  SOCIAL_COMMENT
+  TRAINER_MESSAGE
+  GYM_ANNOUNCEMENT
+  CLASS_REMINDER
+  MEMBERSHIP_EXPIRING
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  OTHER
+}
+
+model Notification {
+  id              String           @id @default(uuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type            NotificationType
+  title           String
+  message         String
+
+  // Optional link
+  link            String?
+
+  isRead          Boolean          @default(false)
+  readAt          DateTime?
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([isRead])
+}
+
+// ========================================
+// PAYMENTS & SUBSCRIPTIONS
+// ========================================
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  STRIPE
+  PAYPAL
+  MANUAL
+}
+
+model Payment {
+  id              String          @id @default(uuid())
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  amount          Float
+  currency        String          @default("USD")
+  status          PaymentStatus   @default(PENDING)
+  provider        PaymentProvider @default(STRIPE)
+
+  // Provider details
+  providerPaymentId String?       @unique
+
+  description     String?
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAST_DUE
+}
+
+model Subscription {
+  id              String             @id @default(uuid())
+  userId          String
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  planName        String
+  price           Float
+  interval        String             // monthly, yearly
+  status          SubscriptionStatus @default(ACTIVE)
+
+  // Provider details
+  stripeSubscriptionId String?       @unique
+
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+
+  cancelAtPeriodEnd  Boolean         @default(false)
+  canceledAt         DateTime?
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
