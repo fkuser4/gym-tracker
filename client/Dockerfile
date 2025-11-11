@@ -7,8 +7,9 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies (use install instead of ci to rebuild lock file for Linux)
-RUN npm install
+# Install dependencies and explicitly install optional deps
+RUN npm install && \
+    npm install --no-save @rollup/rollup-linux-arm64-musl
 
 # Copy config files
 COPY vite.config.ts tsconfig*.json ./
