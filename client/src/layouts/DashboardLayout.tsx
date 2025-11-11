@@ -61,20 +61,20 @@ export const DashboardLayout: React.FC = () => {
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="h-16 flex items-center justify-between px-6 border-b border-border">
-            <h1 className="text-xl font-bold text-foreground">
+          <div className="h-20 flex items-center justify-between px-7 border-b border-border">
+            <h1 className="text-xl font-bold text-foreground" style={{ letterSpacing: '-0.02em' }}>
               Gym<span className="text-primary">Tracker</span>
             </h1>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden text-muted-foreground hover:text-foreground"
+              className="lg:hidden text-muted-foreground hover:text-foreground transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+          <nav className="flex-1 px-5 py-8 space-y-2 overflow-y-auto">
             {navigationItems.map((item) => (
               <Link
                 key={item.path}
@@ -105,8 +105,8 @@ export const DashboardLayout: React.FC = () => {
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top bar */}
-        <header className="h-16 bg-card border-b border-border sticky top-0 z-30">
-          <div className="h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <header className="h-20 bg-card border-b border-border sticky top-0 z-30">
+          <div className="h-full px-6 sm:px-8 lg:px-10 flex items-center justify-between">
             {/* Mobile menu button */}
             <button
               onClick={() => setSidebarOpen(true)}
@@ -155,7 +155,7 @@ export const DashboardLayout: React.FC = () => {
         </header>
 
         {/* Page content */}
-        <main className="p-4 sm:p-6 lg:p-8">
+        <main className="p-6 sm:p-8 lg:p-10 max-w-[1400px] mx-auto">
           <Outlet />
         </main>
       </div>

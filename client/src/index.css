@@ -2,45 +2,65 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Origin-Inspired Global Styles */
+/* ORIGIN FINANCIAL APP - EXACT AESTHETIC */
 @layer base {
   :root {
-    /* Light mode colors */
-    --background: 250 250 250;
-    --foreground: 15 23 42;
+    /* Origin's "Clean Girl" Aesthetic - Light & Airy */
+    --background: 249 250 251; /* Almost white background */
+    --foreground: 31 41 55; /* Soft dark gray text */
+
+    /* Pure white cards with minimal shadows */
     --card: 255 255 255;
-    --card-foreground: 15 23 42;
-    --primary: 14 165 233;
+    --card-foreground: 31 41 55;
+
+    /* Origin's signature COOL GREEN (not blue!) */
+    --primary: 16 185 129; /* Emerald green - Origin's main color */
     --primary-foreground: 255 255 255;
-    --secondary: 241 245 249;
-    --secondary-foreground: 15 23 42;
-    --muted: 241 245 249;
-    --muted-foreground: 100 116 139;
-    --accent: 241 245 249;
-    --accent-foreground: 15 23 42;
-    --border: 226 232 240;
-    --input: 226 232 240;
-    --ring: 14 165 233;
-    --radius: 0.75rem;
+
+    /* Very light gray for secondary */
+    --secondary: 243 244 246;
+    --secondary-foreground: 107 114 128;
+
+    /* Muted colors - very subtle */
+    --muted: 243 244 246;
+    --muted-foreground: 156 163 175;
+
+    /* Accent - cool blue (secondary to green) */
+    --accent: 59 130 246;
+    --accent-foreground: 255 255 255;
+
+    /* Borders - barely visible */
+    --border: 243 244 246;
+    --input: 229 231 235;
+    --ring: 16 185 129;
+
+    --radius: 0.875rem;
   }
 
   .dark {
-    /* Dark mode colors - Origin-inspired palette */
-    --background: 15 23 42;
-    --foreground: 248 250 252;
-    --card: 30 41 59;
-    --card-foreground: 248 250 252;
-    --primary: 56 189 248;
-    --primary-foreground: 15 23 42;
-    --secondary: 51 65 85;
-    --secondary-foreground: 248 250 252;
-    --muted: 51 65 85;
-    --muted-foreground: 148 163 184;
-    --accent: 51 65 85;
-    --accent-foreground: 248 250 252;
-    --border: 51 65 85;
-    --input: 51 65 85;
-    --ring: 56 189 248;
+    /* Origin's Dark Mode - Deep but not harsh */
+    --background: 17 24 39;
+    --foreground: 243 244 246;
+
+    --card: 31 41 55;
+    --card-foreground: 243 244 246;
+
+    /* Brighter green for dark mode */
+    --primary: 52 211 153;
+    --primary-foreground: 17 24 39;
+
+    --secondary: 55 65 81;
+    --secondary-foreground: 209 213 219;
+
+    --muted: 55 65 81;
+    --muted-foreground: 156 163 175;
+
+    --accent: 96 165 250;
+    --accent-foreground: 17 24 39;
+
+    --border: 55 65 81;
+    --input: 55 65 81;
+    --ring: 52 211 153;
   }
 
   * {
@@ -48,147 +68,144 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-      sans-serif;
-    margin: 0;
-    padding: 0;
-  }
-
-  html {
-    scroll-behavior: smooth;
+    @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto', sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.011em;
   }
 }
 
-/* Origin-Inspired Components */
+/* ORIGIN-STYLE COMPONENTS */
 @layer components {
-  /* Card Component */
+  /* Cards - Clean, spacious, barely-there shadows */
   .card {
-    @apply bg-card text-card-foreground rounded-2xl border border-border shadow-card transition-all duration-200;
+    @apply bg-card text-card-foreground rounded-2xl;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid rgb(var(--border));
   }
 
   .card:hover {
-    @apply shadow-card-hover;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   }
 
-  /* Button Styles */
+  /* Buttons - Subtle and clean */
   .btn {
-    @apply inline-flex items-center justify-center rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center rounded-xl font-medium transition-all;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+    @apply disabled:opacity-40 disabled:pointer-events-none;
+    font-size: 14px;
+    letter-spacing: -0.006em;
   }
 
   .btn-primary {
-    @apply btn bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm;
+    @apply btn bg-primary text-primary-foreground;
+    @apply hover:opacity-90 shadow-sm;
   }
 
   .btn-secondary {
-    @apply btn bg-secondary text-secondary-foreground hover:bg-secondary/80;
+    @apply btn bg-secondary text-secondary-foreground;
+    @apply hover:bg-secondary/80;
   }
 
   .btn-ghost {
-    @apply btn hover:bg-accent hover:text-accent-foreground;
+    @apply btn hover:bg-secondary/50;
   }
 
-  /* Input Styles */
+  /* Inputs - Clean minimal style */
   .input {
-    @apply flex h-11 w-full rounded-xl border border-input bg-transparent px-4 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all;
+    @apply h-11 w-full rounded-xl border border-input bg-card px-4 py-2 text-sm;
+    @apply placeholder:text-muted-foreground transition-all;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
   }
 
-  /* Badge Styles */
+  /* Badges - Very subtle */
   .badge {
-    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition-colors;
+    @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium;
+    letter-spacing: 0.01em;
   }
 
   .badge-primary {
-    @apply badge bg-primary/10 text-primary;
+    @apply badge bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400;
   }
 
   .badge-success {
-    @apply badge bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400;
+    @apply badge bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400;
   }
 
   .badge-warning {
-    @apply badge bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400;
+    @apply badge bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400;
   }
 
   .badge-danger {
-    @apply badge bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400;
+    @apply badge bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400;
   }
 
-  /* Container */
+  /* Container - More spacious like Origin */
   .container {
-    @apply w-full mx-auto px-4 sm:px-6 lg:px-8;
+    @apply w-full mx-auto px-6 sm:px-8;
+    max-width: 1280px;
   }
 
-  /* Page Header */
+  /* Page Headers - Minimal */
   .page-header {
-    @apply mb-8 animate-fade-in;
+    @apply mb-8;
   }
 
   .page-title {
-    @apply text-3xl font-bold text-foreground mb-2;
+    @apply text-3xl font-semibold text-foreground mb-2;
+    letter-spacing: -0.025em;
   }
 
   .page-subtitle {
-    @apply text-muted-foreground;
+    @apply text-sm text-muted-foreground;
+    letter-spacing: -0.006em;
   }
 
-  /* Stat Card (Origin-style) */
+  /* Stat Cards - Origin style */
   .stat-card {
-    @apply card p-6 space-y-2;
+    @apply card p-7;
   }
 
   .stat-label {
-    @apply text-sm text-muted-foreground font-medium;
+    @apply text-xs text-muted-foreground font-medium uppercase tracking-wider mb-3;
   }
 
   .stat-value {
-    @apply text-2xl font-bold text-foreground;
+    @apply text-3xl font-semibold text-foreground mb-1;
+    letter-spacing: -0.03em;
   }
 
   .stat-change {
-    @apply text-sm font-medium;
+    @apply text-sm font-medium flex items-center gap-1 mt-2;
   }
 
   .stat-change.positive {
-    @apply text-green-600 dark:text-green-400;
+    @apply text-emerald-600 dark:text-emerald-400;
   }
 
   .stat-change.negative {
     @apply text-red-600 dark:text-red-400;
   }
 
-  /* Dashboard Grid */
+  /* Dashboard Grid - Spacious */
   .dashboard-grid {
-    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6;
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5;
   }
 
-  /* Loading Spinner */
+  /* Spinner */
   .spinner {
     @apply animate-spin rounded-full border-2 border-current border-t-transparent;
   }
 }
 
-/* Utilities */
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-}
-
-/* Custom Scrollbar (Origin-style) */
+/* Custom Scrollbar - Minimal */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -200,12 +217,5 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-muted-foreground/50;
-}
-
-/* Smooth transitions for dark mode */
-* {
-  transition-property: background-color, border-color, color, fill, stroke;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+  @apply bg-muted-foreground/30;
 }

@@ -46,15 +46,15 @@ export const StatCard: React.FC<StatCardProps> = ({
   };
 
   return (
-    <Card className="stat-card">
-      <div className="flex items-start justify-between">
+    <Card className="stat-card hover:shadow-card-hover transition-all">
+      <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
           <p className="stat-label">{label}</p>
           <p className="stat-value">{value}</p>
           {(change !== undefined || changeLabel) && (
-            <div className={`flex items-center gap-1 mt-2 ${getTrendColor()}`}>
+            <div className={`flex items-center gap-1.5 mt-3 ${getTrendColor()}`}>
               {getTrendIcon()}
-              <span>
+              <span className="text-sm">
                 {change !== undefined && `${change > 0 ? '+' : ''}${change}%`}
                 {changeLabel && ` ${changeLabel}`}
               </span>
@@ -62,7 +62,7 @@ export const StatCard: React.FC<StatCardProps> = ({
           )}
         </div>
         {icon && (
-          <div className="text-primary opacity-80">
+          <div className="text-primary opacity-90 mt-1">
             {icon}
           </div>
         )}
